@@ -17,7 +17,7 @@ import {
   createUserRepository,
   createCredentialRepository,
   createSessionRepository,
-} from "./domains/user/repositories.pg.js";
+} from "./domains/auth/repositories.pg.js";
 import { OrderService } from "./domains/order/order.service.js";
 import { PositionService } from "./domains/position/position.service.js";
 import { AccountService } from "./domains/account/account.service.js";

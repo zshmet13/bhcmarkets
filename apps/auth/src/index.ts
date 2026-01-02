@@ -1,9 +1,9 @@
-export { AuthProvider, useAuth } from "./AuthContext";
-export type { AuthContextType, User } from "./AuthContext";
+export { AuthProvider, useAuth } from "./components/AuthContext";
+export type { AuthContextType, User } from "./components/AuthContext";
+export { RequireAuth } from "./components/RequireAuth";
+export { AuthPage } from "./components/AuthPage";
+export { LoginForm } from "./components/Forms/LoginForm";
+export { RegisterForm } from "./components/Forms/RegisterForm";
+export { UserOrLogin } from "./components/UserOrLogin";
+export type { UserOrLoginProps } from "./components/UserOrLogin";
 
-export { RequireAuth } from "./RequireAuth";
-export { AuthPage } from "./AuthPage";
-export { LoginForm } from "./components/LoginForm";
-export { RegisterForm } from "./components/RegisterForm";
-export { UserOrLogin } from "./UserOrLogin";
-export type { UserOrLoginProps } from "./UserOrLogin";

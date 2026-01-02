@@ -1,5 +1,7 @@
 import type { HttpRequest, HttpResponse } from "../../api/types.js";
-import { validatePlaceOrder } from "./orderValidator.js";
+import { validatePlaceOrderHttpBody } from "./orderHttpValidator.js";
+
+
 
 export const listByAccount = async (
   req: HttpRequest<unknown, unknown, { accountId: string }>,
@@ -8,7 +10,7 @@ export const listByAccount = async (
 };
 
 export const placeOrder = async (req: HttpRequest): Promise<HttpResponse> => {
-  const body = validatePlaceOrder(req.body);
+  const body = validatePlaceOrderHttpBody(req.body);
   const idempotencyKey = req.headers["idempotency-key"];
   // NEXT: OrderService.place(body, { idempotencyKey })
   return { status: 201, body: { ...body, id: "" } };

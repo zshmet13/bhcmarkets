@@ -5,7 +5,7 @@
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src",
-    "ignoreDeprecations": "6.0",
+    "ignoreDeprecations": "",
     "types": [
       "node"
     ]

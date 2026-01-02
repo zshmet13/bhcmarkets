@@ -1,26 +1,31 @@
 {
-  "name": "@repo/auth",
-  "version": "0.0.0",
+  "name": "auth",
   "private": true,
-  "exports": {
-    ".": "./src/index.ts"
-  },
+  "version": "0.0.0",
+  "type": "module",
   "scripts": {
-    "lint": "eslint . --max-warnings 0",
-    "check-types": "tsc --noEmit"
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
   },
   "dependencies": {
-    "@repo/api-client": "*",
-    "@repo/ui": "*",
-    "react": "^18.3.1",
-    "react-router-dom": "^7.9.4",
-    "styled-components": "^6.1.19"
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
   },
   "devDependencies": {
-    "@repo/eslint-config": "*",
-    "@repo/typescript-config": "*",
-    "@types/react": "^18.3.3",
-    "@types/react-dom": "^18.3.0",
-    "typescript": "5.9.2"
+    "@repo/backend": "*",
+    "@repo/ui": "*",
+    "@eslint/js": "^9.25.0",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "@vitejs/plugin-react-swc": "^3.9.0",
+    "eslint": "^9.25.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^16.0.0",
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.30.1",
+    "vite": "^6.3.5"
   }
 }
