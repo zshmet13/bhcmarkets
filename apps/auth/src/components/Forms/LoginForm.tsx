@@ -1,88 +1,49 @@
 import { useState, type FormEvent } from "react";
 import styled from "styled-components";
-import { Button, EmailInput, PasswordInput } from "@repo/ui";
-import { createAuthClient, type LoginRequest, ApiError } from "../../lib/api-client";
+import { Button, EmailInput, Notification, PasswordInput } from "@repo/ui";
+import { authApi } from "../../lib/authApi";
 import { useAuth } from "../AuthContext";
-import { useToast } from "../ToastContext";
 
 const Form = styled.form`
   display: flex;
   flex-direction: column;
-  gap: ${({ theme }) => theme.spacing.lg};
+  gap: ${({ theme }) => theme.spacing.md};
   width: 100%;
 `;
 
-const ForgotPasswordLink = styled.button`
-  background: none;
-  border: none;
-  color: ${({ theme }) => theme.colors.primary};
-  font-size: ${({ theme }) => theme.typography.sizes.sm};
-  font-weight: ${({ theme }) => theme.typography.weightMedium};
-  font-family: ${({ theme }) => theme.typography.fontFamily};
-  cursor: pointer;
-  padding: 0;
-  text-align: right;
-  transition: color 0.2s ease;
-  margin-top: -${({ theme }) => theme.spacing.sm};
-
-  &:hover {
-    color: ${({ theme }) => theme.colors.primaryHover};
-    text-decoration: underline;
-  }
-`;
-
-const Divider = styled.div`
-  display: flex;
-  align-items: center;
-  gap: ${({ theme }) => theme.spacing.md};
-  margin: ${({ theme }) => theme.spacing.sm} 0;
-  color: ${({ theme }) => theme.colors.text.tertiary};
-  font-size: ${({ theme }) => theme.typography.sizes.xs};
-
-  &::before,
-  &::after {
-    content: "";
-    flex: 1;
-    height: 1px;
-    background: ${({ theme }) => theme.colors.border.subtle};
-  }
-`;
-
-const InputGroup = styled.div`
+const Banner = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${({ theme }) => theme.spacing.md};
+  gap: ${({ theme }) => theme.spacing.sm};
 `;
 
 export interface LoginFormProps {
   onSuccess?: () => void;
   onSwitchToSignup?: () => void;
-  onForgotPassword?: () => void;
 }
 
-export const LoginForm = ({ onSuccess, onSwitchToSignup, onForgotPassword }: LoginFormProps) => {
+export const LoginForm = ({ onSuccess, onSwitchToSignup }: LoginFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   const { login } = useAuth();
-  const { showSuccess, showError } = useToast();
-  const authClient = createAuthClient();
+
+  // Keep the error string generic; avoid account enumeration.
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setError(null);
+    setSuccess(false);
     setLoading(true);
 
     try {
-      const loginData: LoginRequest = {
-        email: email.trim(),
-        password,
-      };
-
-      const result = await authClient.login(loginData);
+      const result = await authApi.login({ email: email.trim(), password });
       login(result.user, result.tokens.accessToken, result.tokens.refreshToken);
 
-      showSuccess("Login successful! Redirecting...", "Welcome back");
+      setSuccess(true);
 
       if (onSuccess) {
         setTimeout(() => {
@@ -90,26 +51,7 @@ export const LoginForm = ({ onSuccess, onSwitchToSignup, onForgotPassword }: Log
         }, 500);
       }
     } catch (err) {
-      if (err instanceof ApiError) {
-        switch (err.code) {
-          case "INVALID_CREDENTIALS":
-            showError("Invalid email or password. Please try again.", "Login Failed");
-            break;
-          case "USER_NOT_ACTIVE":
-            showError("Your account is not active. Please verify your email.", "Account Inactive");
-            break;
-          case "USER_SUSPENDED":
-            showError("Your account has been suspended. Please contact support.", "Account Suspended");
-            break;
-          case "NETWORK_ERROR":
-            showError("Network error. Please check your connection and try again.", "Connection Error");
-            break;
-          default:
-            showError("Login failed. Please try again.", "Error");
-        }
-      } else {
-        showError(err instanceof Error ? err.message : "Login failed. Please try again.", "Error");
-      }
+      setError(err instanceof Error ? err.message : "Login failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -117,54 +59,42 @@ export const LoginForm = ({ onSuccess, onSwitchToSignup, onForgotPassword }: Log
 
   return (
     <Form onSubmit={handleSubmit}>
-      <InputGroup>
-        <EmailInput
-          id="email"
-          label="Email Address"
-          placeholder="you@company.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          disabled={loading}
-          autoComplete="email"
-          autoFocus
-          showValidation
-        />
+      {(error || success) && (
+        <Banner>
+		  {error && <Notification variant="danger" title="Sign-in failed" message={error} />}
+		  {success && <Notification variant="success" title="Signed in" message="Redirecting…" />}
+        </Banner>
+      )}
 
-        <PasswordInput
-          id="password"
-          label="Password"
-          placeholder="Enter your password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          disabled={loading}
-          autoComplete="current-password"
-        />
+      <EmailInput
+        id="email"
+        label="Email"
+        placeholder="your@email.com"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        required
+        disabled={loading}
+        showValidation
+      />
 
-        <ForgotPasswordLink type="button" onClick={onForgotPassword} disabled={loading}>
-          Forgot password?
-        </ForgotPasswordLink>
-      </InputGroup>
+      <PasswordInput
+        id="password"
+        label="Password"
+        placeholder="••••••••"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        required
+        disabled={loading}
+      />
 
-      <Button type="submit" disabled={loading} loading={loading} fullWidth size="lg">
-        {loading ? "Signing in..." : "Sign In"}
+      <Button type="submit" disabled={loading} loading={loading} fullWidth>
+        {loading ? "Logging in..." : "Log In"}
       </Button>
 
       {onSwitchToSignup && (
-        <>
-          <Divider>or</Divider>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onSwitchToSignup}
-            disabled={loading}
-            fullWidth
-            size="lg"
-          >
-            Create New Account
-          </Button>
-        </>
+        <Button type="button" variant="ghost" onClick={onSwitchToSignup} disabled={loading} fullWidth>
+          Don't have an account? Sign up
+        </Button>
       )}
     </Form>
   );

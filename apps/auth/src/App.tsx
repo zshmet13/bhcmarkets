@@ -1,41 +1,15 @@
-import { ThemeProvider } from "@repo/ui";
-import { AuthProvider, useAuth } from "./components/AuthContext";
-<<<<<<< HEAD
-import { ToastProvider } from "./components/ToastContext";
-=======
->>>>>>> 644203f (Add password reset, loading states, success page and accessibility improvements)
-import { AuthPage } from "./components/AuthPage";
-import { SuccessPage } from "./components/SuccessPage";
-import { LoadingScreen } from "./components/LoadingScreen";
+import { RouterProvider } from "react-router-dom";
+import { AuthProvider } from "./components/AuthContext";
+import { router } from "./router";
+import "./App.css";
 
-import './App.css'
-
-const AppContent = () => {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) {
-    return <LoadingScreen message="Initializing..." />;
-  }
-
-  return isAuthenticated ? <SuccessPage /> : <AuthPage />;
-};
-
-function App() {
+export default function App() {
   return (
-    <ThemeProvider>
-<<<<<<< HEAD
-      <ToastProvider>
-        <AuthProvider>
-          <AppContent />
-        </AuthProvider>
-      </ToastProvider>
-=======
+    <div className="app-root">
+      {/* AuthProvider owns session state; routing stays separate. */}
       <AuthProvider>
-        <AppContent />
+        <RouterProvider router={router} />
       </AuthProvider>
->>>>>>> 644203f (Add password reset, loading states, success page and accessibility improvements)
-    </ThemeProvider>
-  )
+    </div>
+  );
 }
-
-export default App
