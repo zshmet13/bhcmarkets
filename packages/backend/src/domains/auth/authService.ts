@@ -1,3 +1,26 @@
+/**
+ * Auth Service - Core authentication domain service
+ * 
+ * Provides enterprise-grade authentication operations including:
+ * - User registration and login
+ * - Session management with token rotation
+ * - Multi-session support with pruning
+ * - Password updates with session invalidation
+ * 
+ * Security features:
+ * - Token-based authentication (access + refresh tokens)
+ * - Automatic session rotation on token refresh
+ * - Session limit enforcement with oldest-first pruning
+ * - Password version tracking for token invalidation
+ * - User status checks (active, suspended, deleted)
+ * 
+ * Design principles:
+ * - Policy-driven configuration (TTLs, limits configurable)
+ * - Repository pattern for persistence abstraction
+ * - Dependency injection for testability
+ * - Type-safe error handling with AuthError codes
+ */
+
 import { randomUUID } from "node:crypto";
 import type { Logger } from "../../config/logger.js";
 import type {
@@ -19,24 +42,36 @@ import type {
 } from "./auth.types.ts";
 import type { AccountService } from "../account/account.service.js";
 
-const DEFAULT_ACCESS_TOKEN_TTL_SECONDS = 15 * 60; // 15 minutes
-const DEFAULT_REFRESH_TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60; // 30 days
-const DEFAULT_MAX_SESSIONS_PER_USER = 10;
+// Default policy configuration values
+// These can be overridden via AuthServiceConfig when creating the service
+const DEFAULT_ACCESS_TOKEN_TTL_SECONDS = 15 * 60; // 15 minutes - short-lived for security
+const DEFAULT_REFRESH_TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60; // 30 days - longer for UX
+const DEFAULT_MAX_SESSIONS_PER_USER = 10; // Limit concurrent sessions to prevent abuse
 
+/**
+ * Auth error codes for typed error handling
+ * Used throughout the auth domain to indicate specific failure reasons
+ * Controllers should map these to appropriate HTTP status codes
+ */
 export type AuthErrorCode =
-  | "EMAIL_ALREADY_REGISTERED"
-  | "INVALID_CREDENTIALS"
-  | "USER_NOT_ACTIVE"
-  | "USER_SUSPENDED"
-  | "SESSION_NOT_FOUND"
-  | "SESSION_REVOKED"
-  | "SESSION_EXPIRED"
-  | "REFRESH_TOKEN_INVALID"
-  | "REFRESH_TOKEN_REUSED"
-  | "REFRESH_TOKEN_EXPIRED"
-  | "UNKNOWN_USER"
-  | "PASSWORD_MISMATCH";
+  | "EMAIL_ALREADY_REGISTERED"    // User already exists with this email
+  | "INVALID_CREDENTIALS"         // Email or password incorrect (generic for security)
+  | "USER_NOT_ACTIVE"             // User account is pending or deleted
+  | "USER_SUSPENDED"              // User account is suspended
+  | "SESSION_NOT_FOUND"           // Session does not exist
+  | "SESSION_REVOKED"             // Session has been explicitly revoked
+  | "SESSION_EXPIRED"             // Session has exceeded its TTL
+  | "REFRESH_TOKEN_INVALID"       // Refresh token version mismatch or corrupted
+  | "REFRESH_TOKEN_REUSED"        // Attempt to reuse an old refresh token (security threat)
+  | "REFRESH_TOKEN_EXPIRED"       // Refresh token has exceeded its TTL
+  | "UNKNOWN_USER"                // User ID does not exist
+  | "PASSWORD_MISMATCH";          // Current password does not match (for password updates)
 
+/**
+ * Custom error class for auth domain errors
+ * Provides typed error codes for consistent error handling
+ * Never log the full error object to avoid leaking sensitive data
+ */
 export class AuthError extends Error {
   constructor(public readonly code: AuthErrorCode, message?: string) {
     super(message ?? code);
@@ -44,6 +79,11 @@ export class AuthError extends Error {
   }
 }
 
+/**
+ * Secret hasher interface for password and token hashing
+ * Abstracts the hashing algorithm (e.g., bcrypt, argon2)
+ * Allows using different hashers for passwords vs tokens
+ */
 export interface SecretHasher {
   hash(plain: string): Promise<string>;
   verify(plain: string, hashed: string): Promise<boolean>;
